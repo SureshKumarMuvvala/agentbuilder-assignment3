@@ -1,0 +1,10 @@
+{
+  "shopping_results": [
+    { "title": "Milton Thermosteel Flask 1L", "extracted_price": 1299 },
+    { "title": "Cello Swift Insulated Bottle 900ml", "extracted_price": 899 },
+    { "title": "Borosil Hydra Trek 1L", "extracted_price": 1499 },
+    { "title": "Generic Steel Bottle 750ml", "extracted_price": 649 },
+    { "title": "Premium Vacuum Flask 1L", "extracted_price": 1999 },
+    { "title": "Pigeon Croma Bottle 1L", "extracted_price": 1099 }
+  ]
+}

@@ -11,3 +11,13 @@ video/capture/
 thumb/frames/
 thumb/.hyperframes/
 thumb/node_modules/
+
+# python
+__pycache__/
+*.pyc
+.venv/
+# local secrets (never commit real keys; .env.example is committed)
+.env
+# runtime memory store (created at first run)
+*.sqlite
+launchlens_memory.sqlite

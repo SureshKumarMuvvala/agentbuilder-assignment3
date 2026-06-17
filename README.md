@@ -1,231 +1,124 @@
-# Assignment 3 - Build **LaunchLens**: A Market-Intelligence Agent
+# LaunchLens 🔭
 
-**Course:** LangGraph for Production AI Agents
-**Type:** Startup POC (Proof of Concept) - individual or pairs
-**Released:** 14 June 2026
-**Due:** **28 June 2026, EOD (11:59 PM)**
-**Weight:** 100 marks (+ up to 10 bonus)
+A CLI chat agent that tells a founder whether a product is worth launching. You type a
+product idea in plain English; LaunchLens researches it live — **demand** from SerpApi
+(Google Trends, Shopping, News) and **supply** from Oxylabs (Amazon search, product,
+reviews) — fuses both sides, and replies with a **Go / No-Go / Niche** verdict covering
+demand, price band, and positioning. It remembers the conversation across turns and
+summarizes once it gets long.
 
-> ### 🌐 Landing page: **https://fnusatvik07.github.io/agentbuilder-assignment3/**
-> The full brief with the embedded video and tabs (Problem · Build · Architecture · Data · Grading · Submit). Start there.
->
-> **▶ Watch the 60-second brief:** on the [landing page](https://fnusatvik07.github.io/agentbuilder-assignment3/), the [Releases page](https://github.com/fnusatvik07/agentbuilder-assignment3/releases/tag/v1.0), or [download `LaunchLens-brief.mp4`](./LaunchLens-brief.mp4).
-
----
-
-## 1. The Scenario
-
-You are the founding engineer of a startup. Here is the pitch your founder walks in with:
-
-> *"E-commerce sellers and founders are flying blind. **Demand** data lives on Google - what people search for, what's trending, what it costs across the web. **Supply** data lives on the marketplaces - what's actually selling on Amazon, at what price, with what complaints in the reviews. Nobody connects the two. We're building **LaunchLens**: an AI agent that fuses both and tells a founder whether a product is worth launching, how to price it, and how to position it."*
-
-Your job is to build **LaunchLens** from scratch as a standalone product.
-
-> **This is a fixed brief, not an open-ended hackathon.** Everyone builds the same product (LaunchLens) so we grade *engineering*, not who had the cleverest idea. Your creativity goes into *how well you build it* - the graph design, the data fusion, the code quality, the presentation.
+> 📄 The full assignment brief lives in **[README-brief.md](./README-brief.md)** and the
+> hosted landing page: https://fnusatvik07.github.io/agentbuilder-assignment3/
 
 ---
 
-## ✅ In plain terms: exactly what to build and submit
+## Setup
 
-Read this part first. The rest of the document is the detailed version of these same bullets.
+Requires Python 3.12+ and [`uv`](https://docs.astral.sh/uv/).
 
-**What you are building (one line):** a command-line chat agent called **LaunchLens**. A founder types a product idea, your agent researches it live, and replies with a **Go / No-Go / Niche** verdict, then keeps chatting with memory of the conversation.
+```bash
+# 1. Install dependencies into a local venv
+uv venv
+uv sync
 
-### A. Your agent must do all of these
-- [ ] Take a founder's product question in plain English, in a **CLI chat loop**.
-- [ ] Pull **demand** data from **SerpApi** (use at least **2** of: Google Trends, Google Shopping, Google News, Google Search).
-- [ ] Pull **supply** data from **Oxylabs** (use at least **2** of: `amazon_search`, `amazon_product`, `amazon_pricing`, `amazon_bestsellers`, reviews).
-- [ ] **Fuse both sides** in the agent's reasoning - one combined answer, not two separate features.
-- [ ] Output a clear **Go / No-Go / Niche** verdict covering demand, price band, and positioning.
-- [ ] **Remember the conversation** across turns, and **summarize** it once it gets long.
+# 2. Configure keys (mock mode needs none)
+cp .env.example .env
+# edit .env — set LLM_PROVIDER and any API keys you have
 
-### B. Your LangGraph graph must contain all 5 (this is 45 of 100 marks)
-- [ ] **Graph + state** - a typed `StateGraph` with clean `START -> ... -> END` wiring.
-- [ ] **Routing** - conditional edges that pick a path based on the user's intent.
-- [ ] **Fan-out** - parallel nodes that run at the same time, then merge their results.
-- [ ] **Agent node + tools** - an LLM agent with SerpApi and Oxylabs wrapped as tools.
-- [ ] **Short-term memory** - a checkpointer **plus** a summarization node.
+# 3. Run the chat loop
+uv run launchlens
+# or: uv run python cli.py
+```
 
-### C. What to submit (one public GitHub repo, by 28 June EOD)
-- [ ] **Working code** that runs from your README (CLI is enough).
-- [ ] **README** with: setup steps, a **concept map** (file + function + line for each of the 5 concepts above), and 3-6 demo prompts.
-- [ ] **`.env.example`** listing required keys (never commit real keys).
-- [ ] A **graph diagram** (drawn, ASCII, or `graph.get_graph().draw_mermaid()`).
-- [ ] **Slides** (PDF / PPT / Google Slides) explaining the product and architecture.
-- [ ] A **2-minute screen-recorded demo video** that explains LaunchLens and shows it running, including memory across turns.
-- [ ] **`SUBMISSION.md`** - copy [`SUBMISSION_TEMPLATE.md`](./SUBMISSION_TEMPLATE.md), fill it in.
+### Environment variables (`.env`)
 
-**How to hand in:** reply on the assignment thread with your public repo link before **28 June 2026, 11:59 PM**.
+| Variable            | Purpose                                          |
+|---------------------|--------------------------------------------------|
+| `LLM_PROVIDER`      | `mock` \| `openai` \| `anthropic` (default `mock`) |
+| `SERPAPI_KEY`       | SerpApi key — demand data                        |
+| `OXYLABS_USER`      | Oxylabs username — supply data                   |
+| `OXYLABS_PASS`      | Oxylabs password — supply data                   |
+| `OPENAI_API_KEY`    | Required when `LLM_PROVIDER=openai`              |
+| `ANTHROPIC_API_KEY` | Required when `LLM_PROVIDER=anthropic`          |
 
-> If you can tick every box above, you have done the assignment. Everything below is detail and examples.
+> **Mock mode** (`LLM_PROVIDER=mock`) needs no keys: every tool loads from `fixtures/`
+> and a fake LLM drives the conversation. Use it to develop and demo offline.
 
 ---
 
-## 2. The Product You Will Build - **LaunchLens** 🔭
+## Concept map (the 5 graded LangGraph concepts)
 
-**LaunchLens** is a conversational LangGraph agent (CLI is enough; UI/API is bonus) that a founder talks to like this:
+Each required concept maps to a file + function + line. See
+[`CONCEPT_MAP.md`](./CONCEPT_MAP.md) for the full per-symbol breakdown.
 
-> *"I want to launch a stainless-steel insulated water bottle in India under ₹1,500 - is it worth it, and how should I position it?"*
+| # | Concept                       | File                              | Function / symbol            | Line |
+|---|-------------------------------|-----------------------------------|------------------------------|------|
+| 1 | Typed `StateGraph` + reducers | `launchlens/graph.py`             | `LaunchLensState` (`operator.or_` on `research`) | 55, 69 |
+| 2 | Fan-out (parallel `Send()`)   | `launchlens/graph.py`             | `route_by_intent` / `Send`   | 151, 160 |
+| 3 | Routing (conditional edges)   | `launchlens/graph.py`             | `classify_intent` / `add_conditional_edges` | 106, 264 |
+| 4 | Agent node + tools            | `launchlens/graph.py`             | `create_react_agent` agent node | 206, 226 |
+| 5 | Short-term memory             | `launchlens/memory.py`, `graph.py`| `SqliteSaver`, `summarize_if_needed` | 34, 77 |
 
-LaunchLens must be able to answer questions like that by doing the following, and the founder must be able to **keep the conversation going** ("what about the US market?", "compare it with the cheaper one") with full memory of earlier turns.
+Tools wrapped for the agent node:
 
-### What LaunchLens must be able to do
+- **SerpApi (demand)** — `launchlens/tools/serpapi_tools.py`: Google Trends, Shopping, News
+- **Oxylabs (supply)** — `launchlens/tools/oxylabs_tools.py`: Amazon search, product, reviews
 
-| Capability | Data source | What it produces |
-|-----------|-------------|------------------|
-| **Validate demand** | Google **Trends** (SerpApi) - interest over time + related queries | Is interest rising, flat, or dying? Which related search terms are hot? |
-| **Read the marketplace** | Amazon via **Oxylabs** - `amazon_search`, `amazon_bestsellers`, `amazon_product` | Top sellers, prices, ratings in the category. |
-| **Mine reviews for gaps** | Amazon reviews via **Oxylabs** (`amazon_product` / reviews) | Recurring complaints = product opportunities ("everyone says it leaks"). |
-| **Compare prices across retailers** | Google **Shopping** (SerpApi) + Amazon pricing (**Oxylabs** `amazon_pricing`) | Where would the founder's target price actually sit? |
-| **Scan the landscape** | Google **News** (SerpApi) | Recent launches, recalls, competitor moves. |
-| **Synthesize a verdict** | the agent (LLM) reasoning over all of the above | A short **Go / No-Go / Niche** brief: demand, price band, differentiation, positioning. |
-
-> You don't have to use *every* engine listed - but you **must** combine **at least two SerpApi engines** and **at least two Oxylabs sources**, and the agent must genuinely **fuse demand + supply** to reason (that fusion is the whole product).
-
-### The core insight (don't lose this)
-
-> **Oxylabs tells you what's *selling*. SerpApi tells you what the market *wants*. LaunchLens connects them.** A feature that uses only one side, or two features that never combine, misses the point.
+Every tool returns a slim dict (<200 bytes); raw API responses are never passed to the LLM.
 
 ---
 
-## 3. The Data Toolbox (verified & feasible)
-
-Both providers and every endpoint below are real and available on free tiers. Test each in the browser before coding.
-
-### SerpApi - demand & market signals  ·  <https://serpapi.com/>  (free tier ~250 searches/month)
-- **Google Trends API** - interest over time, by region, related queries. → `engine=google_trends`
-- **Google Trends - Trending Now** - what's spiking right now.
-- **Google Shopping API** - cross-retailer prices for a product. → `engine=google_shopping`
-- **Google News API** - market events, launches, recalls. → `engine=google_news`
-- **Google Search API** - organic results, knowledge graph, "people also ask".
-- Use the **playground** on serpapi.com to try any engine without writing code first.
-
-### Oxylabs - supply & marketplace reality  ·  Amazon Scraper API (you've already seen example Oxylabs scripts in class)
-- `amazon_search` - keyword → product listings.
-- `amazon_product` - ASIN → full product page (price, stock, rating, images, **reviews**).
-- `amazon_pricing` - competing offers for an ASIN.
-- `amazon_bestsellers` - category bestseller lists.
-- `universal` - scrape *any* website (raw HTML) when no structured source exists.
-
-> **No paid keys? No problem.** You may run in **mock mode** with saved JSON fixtures during development - but your demo must show at least **one real live call per provider** (or a clearly documented recording). Don't fake your way past both APIs.
-
----
-
-## 4. LangGraph Concepts You MUST Demonstrate (the core of the grade)
-
-Your graph must clearly contain **all five**, working. In your README, map each one to the exact file + function + line.
-
-| # | Concept | What we expect to see |
-|---|---------|------------------------|
-| 1 | **Graph construction & state** | A `StateGraph` with a thoughtfully designed, typed state (reducers where state merges). Clean `START → … → END` wiring. |
-| 2 | **Fan-out (parallel execution)** | The graph **branches into parallel nodes and merges results** - e.g. hit Google Trends, Google Shopping, and Amazon *at the same time*, then combine. Not sequential calls pretending to be parallel. |
-| 3 | **Routing (conditional edges)** | A router that **classifies the user's intent / state** and sends the flow down different paths - e.g. "demand question" vs "pricing question" vs "review/sentiment" vs "full LaunchLens report". |
-| 4 | **Agent node + tools** | An LLM agent bound to your tools (SerpApi + Oxylabs wrapped as LangChain tools), with a correct agent ↔ tools loop. Tools return **slim JSON**, not raw scrapes. |
-| 5 | **Short-term memory** | A **checkpointer** (SQLite or Postgres) so conversations survive restarts, **and** a **summarization node** that compresses long conversations so the context window stays bounded while key facts are preserved. |
-
-> **Stay in scope.** Build with *these* concepts - you don't need anything we haven't taught. Going further (e.g. long-term memory) is **bonus**, never a substitute for the five above.
-
----
-
-## 5. Suggested Architecture (a starting point, not a mandate)
-
-The five required concepts are tagged in the diagram below. An editable copy lives in [`docs/architecture.drawio`](./docs/architecture.drawio).
+## Architecture
 
 ```mermaid
 flowchart TD
     U([Founder asks a question]) --> S
-
-    S["summarize node<br/><i>SHORT-TERM MEMORY:<br/>compress long chats</i>"] --> R
-
-    R{"router<br/><i>ROUTING:<br/>classify the ask</i>"}
-    R -->|demand| D["demand branch<br/>(Google Trends)"]
-    R -->|pricing| P["pricing branch<br/>(Shopping + Amazon)"]
-    R -->|full report| F["full report branch<br/><i>FAN-OUT: parallel pulls</i>"]
-
+    S["summarize_if_needed<br/><i>MEMORY: compress long chats</i>"] --> R
+    R{"classify_intent<br/><i>ROUTING</i>"}
+    R -->|demand| D["demand branch"]
+    R -->|pricing| P["pricing branch"]
+    R -->|full report| F["<i>FAN-OUT: parallel Send()</i>"]
     F --> FT["Google Trends"]
     F --> FA["Amazon (Oxylabs)"]
     F --> FN["Google News"]
-
     D --> AG
     P --> AG
     FT --> AG
     FA --> AG
     FN --> AG
-
     AG["agent node<br/><i>AGENT + TOOLS loop</i>"]
-    AG <-->|calls tools| TL["Tools:<br/>SerpApi (Trends, Shopping, News)<br/>Oxylabs (search, product, pricing, reviews)"]
+    AG <-->|calls tools| TL["SerpApi + Oxylabs tools"]
     AG --> V["Go / No-Go / Niche verdict"] --> E([END])
-
-    CP[("Checkpointer<br/>SQLite / Postgres")] -.->|state saved after every node| AG
-
-    classDef mem fill:#e8f0fe,stroke:#1a73e8,color:#1a3a6b;
-    classDef route fill:#fef7e0,stroke:#f9ab00,color:#5f4500;
-    classDef fan fill:#e6f4ea,stroke:#34a853,color:#0b5132;
-    classDef agent fill:#fce8e6,stroke:#ea4335,color:#5f1b14;
-    class S,CP mem;
-    class R route;
-    class F,FT,FA,FN fan;
-    class AG,TL agent;
+    CP[("SqliteSaver checkpointer")] -.->|state saved per node| AG
 ```
 
-You may design your own graph shape, but it must contain all five concepts from §4.
+A live diagram can be regenerated with `graph.get_graph().draw_mermaid()`.
 
 ---
 
-## 6. Deliverables
+## Demo script
 
-Everything goes into a **new public GitHub repo**:
+Run `uv run launchlens` and try a conversation that shows fusion and memory across turns:
 
-1. **Working code** - a runnable LangGraph agent (CLI minimum).
-2. **`README.md`** with:
-   - **Setup instructions** (env vars, how to run).
-   - A **concept map**: for each of the 5 required concepts, the file + function + line where it lives.
-   - A short **demo script** (3-6 example prompts that show off LaunchLens, including memory across turns).
-3. **A graph diagram** (drawn, ASCII, or `graph.get_graph().draw_mermaid()`).
-4. **`.env.example`** - list required keys (never commit real keys).
-5. **A presentation** (slides - PDF/PPT/Google Slides) explaining the product, the architecture, and your data-fusion approach.
-6. **A screen-recorded demo video, at least 2 minutes**, that:
-   - explains **what LaunchLens is** and the problem it solves, and
-   - shows it **actually running** - a real conversation with a Go/No-Go verdict and memory across turns.
-   - Upload to Loom/YouTube (unlisted) or commit the file; put the link in your README.
-7. Fill in **`SUBMISSION_TEMPLATE.md`** and commit it as `SUBMISSION.md`.
-
-**How to submit:** reply to the assignment thread with your repo link before the deadline.
+1. `I want to launch a stainless-steel insulated water bottle in India under ₹1,500 — is it worth it?`
+2. `What are people complaining about in the reviews of the top sellers?`
+3. `What about the US market instead?`  ← *tests memory: it should keep the bottle context*
+4. `Compare it with a cheaper plastic version.`
+5. `Give me the final Go/No-Go verdict with a price band and positioning.`
+6. `Summarize everything we've discussed.`  ← *exercises the summarization node*
 
 ---
 
-## 7. Constraints & Ground Rules
+## Project layout
 
-- **Stick to what we've covered** (graphs, fan-out, routing, agent + tools, short-term memory + summarization). Extra concepts are bonus, never a substitute.
-- **Both providers must do real work** in the product - not a token call that's ignored.
-- **The two data worlds must combine** - demand (SerpApi) fused with supply (Oxylabs).
-- **Token discipline:** tools return slimmed JSON, not raw scrapes (graded under code quality).
-- **Secrets stay secret:** `.env` in `.gitignore`, keys never committed.
-- **Mock mode is allowed** for development, but document what's live vs mocked.
-- **AI assistants are allowed** (you'll use them at work). But you must *understand* and be able to explain every line - we may ask. Code you can't explain scores like code that doesn't work.
-- **Pairs:** up to 2 people. Both names in the README; commit history should show both contributing.
-
----
-
-## 8. Grading
-
-See **[`RUBRIC.md`](./RUBRIC.md)** for the full 100-mark breakdown. At a glance:
-
-| Area | Marks |
-|------|------:|
-| LangGraph mastery (the 5 concepts) | 45 |
-| Data integration (SerpApi + Oxylabs, fused) | 20 |
-| Code quality & scalability | 20 |
-| Presentation, demo video & docs | 15 |
-| **Total** | **100** |
-| Bonus (long-term memory, eval, UI, streaming…) | **+10** |
-
----
-
-## 9. Logistics
-
-- **Deadline:** 28 June 2026, 11:59 PM. Repo commit timestamps are the source of truth.
-- **Late policy:** -10% per day, up to 3 days; nothing accepted after that (unless pre-arranged).
-- **Questions:** post in the class channel. Common blockers will be addressed live.
-
-Now go build something a real founder would actually pay for. 🚀
+```
+launchlens/
+  config.py        # 3-mode LLM switcher (mock | openai | anthropic)
+  graph.py         # LangGraph state machine (all 5 concepts)
+  memory.py        # SQLite checkpointer
+  tools/
+    serpapi_tools.py   # demand: Trends, Shopping, News
+    oxylabs_tools.py   # supply: Amazon search, product, reviews
+fixtures/          # mock JSON, one file per API source
+cli.py             # Rich terminal UI, entry point
+```

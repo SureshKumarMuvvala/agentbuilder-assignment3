@@ -1,0 +1,16 @@
+{
+  "results": [
+    {
+      "content": {
+        "reviews": [
+          { "rating": 2, "title": "Leaks from the cap when carried sideways", "content": "Disappointed, it wet my bag." },
+          { "rating": 1, "title": "Lid threading broke within a week", "content": "Cheap plastic lid." },
+          { "rating": 3, "title": "Keeps drinks cold but quite heavy", "content": "Good insulation, bulky." },
+          { "rating": 5, "title": "Excellent flask, keeps tea hot 12 hours", "content": "Worth the money." },
+          { "rating": 2, "title": "Paint chips off after a few washes", "content": "Looks worn fast." },
+          { "rating": 4, "title": "Solid build, slightly pricey", "content": "Happy overall." }
+        ]
+      }
+    }
+  ]
+}

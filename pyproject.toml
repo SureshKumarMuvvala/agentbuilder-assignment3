@@ -1,7 +1,28 @@
 [project]
-name = "agentbuilder-assignment3"
+name = "launchlens"
 version = "0.1.0"
-description = "Add your description here"
+description = "CLI chat agent that gives founders a Go/No-Go/Niche verdict on a product idea."
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "langgraph>=0.2.0",
+    "langgraph-checkpoint-sqlite",
+    "langchain-anthropic",
+    "langchain-openai",
+    "langchain-core",
+    "langchain-community",
+    "google-search-results",
+    "requests",
+    "python-dotenv",
+    "rich",
+]
+
+[project.scripts]
+launchlens = "cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["launchlens"]

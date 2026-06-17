@@ -1,0 +1,20 @@
+{
+  "interest_over_time": {
+    "timeline_data": [
+      { "date": "Jan 2026", "values": [{ "extracted_value": 38 }] },
+      { "date": "Feb 2026", "values": [{ "extracted_value": 47 }] },
+      { "date": "Mar 2026", "values": [{ "extracted_value": 55 }] },
+      { "date": "Apr 2026", "values": [{ "extracted_value": 64 }] },
+      { "date": "May 2026", "values": [{ "extracted_value": 71 }] },
+      { "date": "Jun 2026", "values": [{ "extracted_value": 79 }] }
+    ]
+  },
+  "related_queries": {
+    "rising": [
+      { "query": "insulated steel water bottle" },
+      { "query": "leakproof flask 1l" },
+      { "query": "bpa free bottle india" },
+      { "query": "gym water bottle" }
+    ]
+  }
+}

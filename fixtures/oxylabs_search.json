@@ -1,0 +1,17 @@
+{
+  "results": [
+    {
+      "content": {
+        "results": {
+          "organic": [
+            { "asin": "B0AAA11111", "title": "Milton Thermosteel Flask 1L", "price": 1299, "rating": 4.2, "reviews_count": 3500 },
+            { "asin": "B0BBB22222", "title": "Cello Swift Insulated 900ml", "price": 899, "rating": 4.0, "reviews_count": 1200 },
+            { "asin": "B0CCC33333", "title": "Borosil Hydra Trek 1L", "price": 1499, "rating": 4.4, "reviews_count": 800 },
+            { "asin": "B0DDD44444", "title": "Generic Steel Bottle 750ml", "price": 649, "rating": 3.6, "reviews_count": 210 },
+            { "asin": "B0EEE55555", "title": "Premium Vacuum Flask 1L", "price": 1999, "rating": 4.5, "reviews_count": 600 }
+          ]
+        }
+      }
+    }
+  ]
+}
