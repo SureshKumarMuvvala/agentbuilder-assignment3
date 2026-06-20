@@ -28,6 +28,7 @@ from langchain_core.messages import (
     HumanMessage,
     RemoveMessage,
     SystemMessage,
+    ToolMessage,
 )
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
@@ -47,6 +48,33 @@ ALL_TOOLS = SERPAPI_TOOLS + OXYLABS_TOOLS
 # Trip the summarizer once the conversation passes this many messages, so the
 # context window stays bounded on long chats (rubric: summarization node).
 SUMMARY_TRIGGER = 10
+
+
+def _conversation_messages(messages: list) -> list:
+    """Human/assistant turns safe to replay into chat APIs on a later turn.
+
+    ReAct tool loops (AIMessage with tool_calls + ToolMessage) are valid only
+    inside the single agent invocation that created them. Persisting them in
+    SQLite and replaying them on the next turn triggers OpenAI 400 errors.
+    """
+    safe: list = []
+    for message in messages:
+        if isinstance(message, (HumanMessage, SystemMessage)):
+            safe.append(message)
+        elif isinstance(message, AIMessage) and not getattr(message, "tool_calls", None):
+            safe.append(message)
+    return safe
+
+
+def _final_verdict_message(new_messages: list) -> AIMessage:
+    """Return the last plain assistant reply from a react-agent run."""
+    for message in reversed(new_messages):
+        if isinstance(message, AIMessage) and not getattr(message, "tool_calls", None):
+            return message
+    for message in reversed(new_messages):
+        if isinstance(message, AIMessage):
+            return AIMessage(content=message.content or "No verdict produced.")
+    return AIMessage(content="No verdict produced.")
 
 
 # ---------------------------------------------------------------------------
@@ -86,18 +114,28 @@ def summarize_if_needed(state: LaunchLensState) -> dict:
     messages = state["messages"]
     if len(messages) <= SUMMARY_TRIGGER:
         return {}  # nothing to do yet
+    if messages and isinstance(messages[-1], ToolMessage):
+        return {}  # never compress mid tool loop
 
-    older, recent = messages[:-4], messages[-4:]
+    convo = _conversation_messages(messages)
+    if len(convo) <= 2:
+        return {}
+
+    older, recent = convo[:-2], convo[-2:]
     transcript = "\n".join(f"{type(m).__name__}: {m.content}" for m in older)
     summary = get_llm().invoke(
         "Summarize this market-research conversation in 3 short sentences, "
         "keeping the product idea and any verdict:\n" + transcript
     ).content
 
-    # add_messages applies RemoveMessage by id to drop the old turns, then we
-    # prepend a single SystemMessage carrying the summary in their place.
-    removals = [RemoveMessage(id=m.id) for m in older if getattr(m, "id", None)]
-    return {"messages": removals + [SystemMessage(content="Summary so far: " + summary)]}
+    # Drop every stored message (including stale tool-loop internals), then
+    # restore a summary plus the last two user/assistant turns.
+    removals = [RemoveMessage(id=m.id) for m in messages if getattr(m, "id", None)]
+    return {
+        "messages": removals
+        + [SystemMessage(content="Summary so far: " + summary)]
+        + recent
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -224,16 +262,13 @@ def agent(state: LaunchLensState) -> dict:
     )
 
     react_agent = create_react_agent(get_llm(), ALL_TOOLS)
-    inputs = [context] + state["messages"]
+    history = _conversation_messages(state["messages"])
+    inputs = [context] + history
     result = react_agent.invoke({"messages": inputs})
 
-    # The react agent returns the whole transcript; keep only what it newly added
-    # (everything after the context + prior history we fed in) so add_messages
-    # appends just the verdict, not duplicates of the existing history.
-    new_messages = result["messages"][len(inputs):]
-    if not new_messages:  # safety net: ensure we always return an answer
-        new_messages = [AIMessage(content="No verdict produced.")]
-    return {"messages": new_messages}
+    # Persist only the final verdict — not the internal tool-call loop — so the
+    # checkpointer stays a clean Human/AI transcript for the next turn.
+    return {"messages": [_final_verdict_message(result["messages"][len(inputs):])]}
 
 
 # ---------------------------------------------------------------------------

@@ -22,7 +22,7 @@ VALID_PROVIDERS = ("mock", "openai", "anthropic")
 # Model IDs per provider. claude-opus-4-8 is Anthropic's current flagship model;
 # gpt-4o is OpenAI's. Pinning them here keeps model choices out of the graph code.
 ANTHROPIC_MODEL = "claude-opus-4-8"
-OPENAI_MODEL = "gpt-4o"
+OPENAI_MODEL = "gpt-4o-mini"
 
 
 def get_provider() -> str:
