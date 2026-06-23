@@ -11,10 +11,14 @@ jobs and leans on the graph for everything hard:
 3. Pretty-print the Go/No-Go/Niche verdict with Rich, plus a dim line showing
    which intent was routed and which data sources were fused.
 
+Pass ``--debug`` (or set ``LAUNCHLENS_DEBUG=1``) to stream each graph node and
+its state delta before the verdict — useful when learning how LangGraph runs.
+
 Type ``exit`` (or Ctrl-C) to quit. Because the thread_id is stable, quitting and
 relaunching resumes the same chat — that's the "memory survives restarts" demo.
 """
 
+import argparse
 import sys
 
 from langchain_core.messages import HumanMessage
@@ -23,6 +27,7 @@ from rich.markdown import Markdown
 from rich.panel import Panel
 
 from launchlens.config import get_provider
+from launchlens.debug import is_debug_enabled, run_graph_with_debug
 from launchlens.graph import build_graph
 
 # Windows' legacy console defaults to the cp1252 code page, which can't encode
@@ -44,13 +49,28 @@ THREAD_ID = "launchlens-cli"
 QUIT_WORDS = {"exit", "quit", "q", "bye"}
 
 
-def _print_banner() -> None:
+def _parse_args() -> argparse.Namespace:
+    """CLI flags; debug can also be toggled via LAUNCHLENS_DEBUG in .env."""
+    parser = argparse.ArgumentParser(
+        description="LaunchLens — Go/No-Go/Niche verdict for product ideas."
+    )
+    parser.add_argument(
+        "--debug",
+        "-d",
+        action="store_true",
+        help="Stream each graph node and its state (learning mode)",
+    )
+    return parser.parse_args()
+
+
+def _print_banner(*, debug: bool = False) -> None:
     """Show the title and which LLM mode we're running in."""
     provider = get_provider()
+    debug_line = "  ·  [bold yellow]debug trace ON[/]" if debug else ""
     console.print(
         Panel.fit(
             "[bold cyan]LaunchLens[/]  — should you launch it?\n"
-            f"[dim]LLM mode: {provider}  ·  type 'exit' to quit[/]",
+            f"[dim]LLM mode: {provider}{debug_line}  ·  type 'exit' to quit[/]",
             border_style="cyan",
         )
     )
@@ -58,6 +78,11 @@ def _print_banner() -> None:
         console.print(
             "[dim yellow]Running in mock mode: tools read from fixtures/, no API "
             "keys needed.[/]\n"
+        )
+    if debug:
+        console.print(
+            "[dim yellow]Debug mode: step through each graph node — press Enter "
+            "to advance, [bold]a[/] to auto-advance.[/]\n"
         )
 
 
@@ -75,7 +100,9 @@ def _print_verdict(state: dict) -> None:
 
 def main() -> None:
     """Run the interactive chat loop."""
-    _print_banner()
+    args = _parse_args()
+    debug = is_debug_enabled(args.debug)
+    _print_banner(debug=debug)
 
     # Build the graph once; it owns the tools, agent, and SQLite checkpointer.
     app = build_graph()
@@ -96,13 +123,14 @@ def main() -> None:
             break
 
         # Invoke the graph with just the new turn; the checkpointer supplies the
-        # rest of the history automatically via the thread_id. A spinner shows
-        # that the parallel demand + supply research is running.
+        # rest of the history automatically via the thread_id.
         try:
-            with console.status("[cyan]Researching demand + supply…[/]"):
-                state = app.invoke(
-                    {"messages": [HumanMessage(content=question)]}, config
-                )
+            payload = {"messages": [HumanMessage(content=question)]}
+            if debug:
+                state = run_graph_with_debug(app, payload, config, console)
+            else:
+                with console.status("[cyan]Researching demand + supply…[/]"):
+                    state = app.invoke(payload, config)
             _print_verdict(state)
         except Exception as e:  # never let one bad turn kill the session
             console.print(f"[red]Something went wrong:[/] {e}\n")
