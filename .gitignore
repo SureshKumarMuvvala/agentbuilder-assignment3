@@ -1,5 +1,7 @@
 # deps & caches
 node_modules/
+frontend/dist/
+frontend/node_modules/
 video/node_modules/
 video/.hyperframes/
 video/capture/

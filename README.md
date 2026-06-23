@@ -46,6 +46,63 @@ uv run launchlens
 
 ---
 
+## Web UI — LangGraph execution viewer
+
+There are **two front-ends over the same compiled graph**: the CLI above, and a
+LangSmith-style web viewer that *watches* the graph run — node-by-node execution,
+the parallel fan-out, tool calls + slim results, routing decision, live state, and
+SqliteSaver checkpoints. The web layer (`launchlens/api/`) changes nothing about
+the graph itself.
+
+Run it as **two processes** (mock mode needs no keys):
+
+```bash
+# 1. Backend — FastAPI + SSE, from the repo root
+uv sync                         # picks up fastapi / uvicorn / sse-starlette
+uv run launchlens-api           # serves http://127.0.0.1:8000
+
+# 2. Frontend — Vite dev server, in a second terminal
+cd frontend
+npm install
+npm run dev                     # serves http://localhost:5173
+```
+
+Then open **http://localhost:5173**.
+
+> ⚠️ Use `localhost`, **not** `127.0.0.1`, for the frontend — Vite binds IPv6 on
+> some Windows setups. Vite proxies `/api/*` to the backend, so there's no CORS
+> setup needed in dev, and you only need the backend running for the UI to work.
+
+What each panel shows (maps 1:1 to the graded concepts):
+
+| Panel | Concept |
+|---|---|
+| **Graph** (left) | Typed `StateGraph` topology + **fan-out** (the 5 research nodes light up together in one superstep) |
+| **Inspector** tab | Node timeline, durations, per-node **state deltas** |
+| **Tools** tab | Each tool call + its slim `<200 B` result (demand vs supply colour-coded) |
+| **State** tab | Live `intent` (**routing**), merged `research` dict (`operator.or_`), message count |
+| **Memory** tab | **SqliteSaver checkpoints** written per superstep |
+| **Chat** (right) | Transcript + input; memory persists per `thread_id` |
+
+**Quick smoke test without a browser** (with the backend running):
+
+```bash
+curl http://127.0.0.1:8000/api/config
+curl -N -X POST http://127.0.0.1:8000/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{"question":"should I launch a steel water bottle?","thread_id":"demo"}'
+```
+
+You should see a stream of `node_start` / `tool_end` / `routing` / `final` SSE
+events. More detail in [`frontend/README.md`](./frontend/README.md).
+
+> In **mock mode** the agent's *internal* tool loop is silent (the fake LLM never
+> calls tools), so the reliable tool trace is the fan-out research nodes — which
+> show all 5 real calls with live outputs. Switch to `openai`/`anthropic` to see
+> the agent node call tools too.
+
+---
+
 ## Concept map (the 5 graded LangGraph concepts)
 
 Each required concept maps to a file + function + line. See
@@ -116,9 +173,15 @@ launchlens/
   config.py        # 3-mode LLM switcher (mock | openai | anthropic)
   graph.py         # LangGraph state machine (all 5 concepts)
   memory.py        # SQLite checkpointer
+  debug.py         # Rich step-through trace for the CLI
   tools/
     serpapi_tools.py   # demand: Trends, Shopping, News
     oxylabs_tools.py   # supply: Amazon search, product, reviews
+  api/             # web layer over the same graph (no graph changes)
+    server.py          # FastAPI: config, topology, chat (SSE), threads
+    streaming.py       # graph event stream -> SSE events
+    serializers.py     # LangChain messages/state -> JSON
 fixtures/          # mock JSON, one file per API source
 cli.py             # Rich terminal UI, entry point
+frontend/          # React + TS + Tailwind execution viewer (see its README)
 ```

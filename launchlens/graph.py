@@ -90,13 +90,16 @@ class LaunchLensState(TypedDict):
     * ``research``  - ``operator.or_`` merges dicts (``{**a, **b}``). The fan-out
       branches each write a different key into this one dict at the same time, so
       a merging reducer is exactly what we need.
-    * ``query`` / ``intent`` - plain fields the router fills in; last write wins.
+    * ``query`` / ``intent`` / ``keyword`` - plain fields the router fills in;
+      last write wins. ``query`` keeps the founder's raw question (for display);
+      ``keyword`` is the cleaned product term we actually send to the search tools.
     """
 
     messages: Annotated[list, add_messages]
     research: Annotated[dict, operator.or_]
     query: str
     intent: str
+    keyword: str
 
 
 # ---------------------------------------------------------------------------
@@ -138,6 +141,81 @@ def summarize_if_needed(state: LaunchLensState) -> dict:
     }
 
 
+# Multi-word question framing we strip so the search tools get a product term,
+# not a whole sentence. Longest/most-specific phrases first so they match before
+# their shorter sub-phrases. Matched as whole space-delimited chunks.
+_FRAMING_PHRASES = (
+    "is search demand for",
+    "what is the search demand for",
+    "what is the demand for",
+    "how is demand for",
+    "is there demand for",
+    "are people searching for",
+    "do people want",
+    "should i launch",
+    "should i sell",
+    "is it worth launching",
+    "is it worth selling",
+    "tell me about",
+    "what about",
+    "how about",
+    "rising or falling",
+    "going up or down",
+    "worth it",
+    "a good idea",
+)
+
+# Single tokens that carry no product meaning: question words, the intent
+# keywords themselves, prepositions, and filler. Dropped after phrase stripping.
+_STOPWORDS = frozenset(
+    {
+        "what", "whats", "how", "why", "where", "when", "which", "who", "can",
+        "could", "would", "will", "there", "been", "being", "get",
+        "is", "are", "the", "a", "an", "for", "this", "that", "of", "to", "in",
+        "on", "do", "does", "should", "i", "me", "my", "it", "and", "or", "with",
+        "under", "below", "above", "over", "than", "about", "launch", "launching",
+        "sell", "selling", "idea", "product", "market", "demand", "search",
+        "searching", "trend", "trends", "trending", "popular", "interest",
+        "rising", "falling", "going", "up", "down", "people", "want", "worth",
+        "good", "bad", "price", "pricing", "cost", "cheap", "expensive",
+        "reviews", "review", "complaints", "quality", "rating",
+    }
+)
+
+# Currency words/symbols to drop (e.g. "under 1500 rupees").
+_CURRENCY = frozenset({"rupees", "rupee", "rs", "inr", "usd", "dollars", "dollar", "₹", "$"})
+
+
+def _extract_keyword(question: str) -> str:
+    """Reduce a founder's question to the product keyword the tools should search.
+
+    Inputs : the raw question, e.g. "Is search demand for AI generated ebooks in
+             India rising or falling?".
+    Outputs: a short search term, e.g. "ai generated ebooks india".
+
+    Why: SerpApi/Oxylabs expect a keyword, not a sentence — passing the whole
+    question makes Google Trends return "no trend data" and news come back empty,
+    which then makes the agent guess. We strip question framing, the intent
+    keywords, prepositions, numbers and currency, and keep the remaining nouns in
+    order. Deterministic on purpose (no LLM call) so it's free, explainable, and
+    leaves mock mode fully reproducible. Falls back to the raw question if we'd
+    otherwise strip everything.
+    """
+    import re
+
+    text = " " + question.lower().strip().rstrip("?.!") + " "
+    for phrase in _FRAMING_PHRASES:
+        text = text.replace(" " + phrase + " ", " ")
+
+    words = [
+        w
+        for w in re.findall(r"[a-z0-9\-]+", text)
+        if w not in _STOPWORDS and w not in _CURRENCY and not w.isdigit()
+    ]
+    keyword = " ".join(words).strip()
+    return keyword or question.strip()
+
+
 # ---------------------------------------------------------------------------
 # 2. ROUTING - classify the question, then a conditional edge picks the path
 # ---------------------------------------------------------------------------
@@ -146,8 +224,8 @@ def classify_intent(state: LaunchLensState) -> dict:
 
     We use a simple, deterministic keyword check (not the LLM) so the routing is
     fast, free, and easy to explain in a demo. The label drives ``route_by_intent``
-    below. We also stash the raw question text in ``query`` so the parallel
-    research nodes can reuse it.
+    below. We stash the raw question in ``query`` (for display) and a cleaned
+    product term in ``keyword`` (what the parallel research nodes actually search).
     """
     query = ""
     for m in reversed(state["messages"]):
@@ -165,7 +243,12 @@ def classify_intent(state: LaunchLensState) -> dict:
     else:
         intent = "full"  # a full Go/No-Go report pulls everything
 
-    return {"query": query, "intent": intent, "research": {}}
+    return {
+        "query": query,
+        "intent": intent,
+        "keyword": _extract_keyword(query),
+        "research": {},
+    }
 
 
 # Which research nodes each intent fans out to. "full" hits all five.
@@ -195,7 +278,10 @@ def route_by_intent(state: LaunchLensState) -> list:
     moving to the agent node. The agent node then sees their merged results.
     """
     targets = INTENT_PLAN.get(state["intent"], INTENT_PLAN["full"])
-    return [Send(node, {"query": state["query"]}) for node in targets]
+    # Send the cleaned keyword (not the raw question) as each node's query, so the
+    # tools search a product term. Fall back to the raw query if no keyword.
+    search_term = state.get("keyword") or state["query"]
+    return [Send(node, {"query": search_term}) for node in targets]
 
 
 # --- The fan-out leaf nodes: one tool each, each writing one key into research --
@@ -231,11 +317,20 @@ def research_amazon(state: dict) -> dict:
 
 
 def research_reviews(state: dict) -> dict:
-    """Gap signal: recurring Amazon review complaints via Oxylabs."""
-    from .tools.oxylabs_tools import amazon_reviews
+    """Gap signal: recurring Amazon review complaints via Oxylabs.
 
-    # Reviews need an ASIN; in mock mode any value works (fixtures are fixed).
-    return {"research": {"reviews": amazon_reviews.invoke("B0AAA11111")}}
+    Reviews need a real ASIN. We run a quick ``amazon_search`` *inside this node*
+    to grab the top listing's ``top_asin``, then mine that product's reviews.
+    Doing the lookup here keeps this an independent parallel branch — we never
+    read ``research_amazon``'s output, which runs concurrently in the same
+    superstep. If the search has no ASIN (e.g. it errored live), we fall back to a
+    placeholder, which mock fixtures still answer.
+    """
+    from .tools.oxylabs_tools import amazon_reviews, amazon_search
+
+    search = amazon_search.invoke(state["query"])
+    asin = search.get("top_asin") if isinstance(search, dict) else None
+    return {"research": {"reviews": amazon_reviews.invoke(asin or "B0AAA11111")}}
 
 
 # ---------------------------------------------------------------------------

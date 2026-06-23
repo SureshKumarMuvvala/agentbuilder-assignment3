@@ -232,6 +232,9 @@ def _format_node_body(node: str, update: dict | None) -> Any:
         route.add_column("Key", style="cyan")
         route.add_column("Value")
         route.add_row("query", query or "—")
+        keyword = update.get("keyword")
+        if keyword:
+            route.add_row("keyword", f"[cyan]{keyword}[/]")
         route.add_row("intent", f"[bold yellow]{intent}[/]")
         route.add_row("fan-out targets", ", ".join(targets))
         parts.append(route)

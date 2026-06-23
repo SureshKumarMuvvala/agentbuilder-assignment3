@@ -64,7 +64,13 @@ def _content(data: dict) -> dict:
 
 
 def _slim_search(data: dict) -> dict:
-    """Reduce a search response to seller count, price band, and average rating."""
+    """Reduce a search response to seller count, price band, and average rating.
+
+    We also surface ``top_asin`` — the ASIN of the top-ranked organic listing — so
+    the reviews branch can mine a *real* product's reviews instead of a hardcoded
+    placeholder. It's one short string, so the dict stays well under the slim
+    output budget.
+    """
     organic = _content(data).get("results", {}).get("organic", [])
     prices = sorted(
         i["price"] for i in organic if isinstance(i.get("price"), (int, float))
@@ -73,11 +79,15 @@ def _slim_search(data: dict) -> dict:
     if not prices:
         return {"error": "no search results"}
 
+    # First organic result = top-ranked listing; use its ASIN as representative.
+    top_asin = next((i["asin"] for i in organic if i.get("asin")), None)
+
     return {
         "sellers": len(organic),
         "low": prices[0],
         "high": prices[-1],
         "avg_rating": round(sum(ratings) / len(ratings), 1) if ratings else None,
+        "top_asin": top_asin,
     }
 
 
@@ -160,11 +170,17 @@ def amazon_reviews(asin: str) -> dict:
     Returns how many reviews were scanned, the average rating, and up to three
     common complaints from the low-star reviews. Use this to find product gaps a
     founder could exploit (e.g. "everyone says it leaks").
+
+    Live data comes from Oxylabs' ``amazon_product`` scraper, whose parsed
+    response embeds a ``reviews`` array — we reuse it here because the dedicated
+    ``amazon_reviews`` source rejects ASIN-as-``query`` ("not available with query
+    parameter") on this plan. ``_slim_reviews`` reads ``content.reviews`` either
+    way, so the mock fixture path is unchanged.
     """
     if is_mock():
         return _slim_reviews(_load_fixture("oxylabs_reviews.json"))
     try:
-        return _slim_reviews(_oxy_query("amazon_reviews", asin))
+        return _slim_reviews(_oxy_query("amazon_product", asin))
     except Exception as e:
         return {"error": str(e)}
 

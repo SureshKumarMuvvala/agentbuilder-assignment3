@@ -15,10 +15,14 @@ dependencies = [
     "requests",
     "python-dotenv",
     "rich",
+    "fastapi",
+    "uvicorn[standard]",
+    "sse-starlette",
 ]
 
 [project.scripts]
 launchlens = "cli:main"
+launchlens-api = "launchlens.api.server:run"
 
 [build-system]
 requires = ["hatchling"]
