@@ -16,6 +16,25 @@ export default {
           cyan: "#22d3ee", // 3 · Fan-out (Oxylabs supply)
           green: "#4ade80", // 4 · Agent + Tools
         },
+        // Verdict semantics — the product's whole point reads in one glance:
+        // GO is go, NICHE is caution, NO-GO is stop.
+        verdict: {
+          go: "#34d399", // emerald
+          niche: "#fbbf24", // amber
+          nogo: "#fb7185", // rose
+        },
+        // Premium near-black surfaces (Vercel/Linear-style elevation ramp).
+        surface: {
+          0: "#08090c", // app background
+          1: "#0d0f14", // sidebar / drawer
+          2: "#12151c", // cards
+          3: "#1a1f29", // raised / hover
+        },
+        hairline: "#1e2430", // 1px borders
+      },
+      boxShadow: {
+        // Soft, low-contrast elevation for cards on a dark canvas.
+        card: "0 1px 2px rgba(0,0,0,0.4), 0 8px 24px -12px rgba(0,0,0,0.6)",
       },
     },
   },

@@ -5,11 +5,11 @@
 // routing decision and the research keys as they stream in.
 
 import type { GraphState } from "../types";
-import type { RunState } from "../hooks/useGraphRun";
+import type { TurnExecution } from "../hooks/useGraphRun";
 import { pretty } from "../lib/ui";
 
 interface Props {
-  run: RunState;
+  run: TurnExecution; // the selected turn's trace
   persisted: GraphState | null; // checkpointed state fetched on thread load
 }
 

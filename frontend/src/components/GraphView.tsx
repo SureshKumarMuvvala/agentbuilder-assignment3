@@ -6,12 +6,12 @@
 // fan-out layer is laid out as a horizontal row to make the parallelism obvious.
 
 import type { GraphTopology } from "../types";
-import type { RunState } from "../hooks/useGraphRun";
+import type { TurnExecution } from "../hooks/useGraphRun";
 import { colorHex, statusColor } from "../lib/ui";
 
 interface Props {
   topology: GraphTopology | null;
-  run: RunState;
+  run: TurnExecution; // a single turn's trace (live or historical)
 }
 
 // The fixed visual order of the "spine" nodes (everything that isn't a parallel
@@ -41,9 +41,9 @@ function NodeBox({
       className="relative rounded-lg px-3 py-2 text-center transition-all"
       style={{
         border: `1.5px solid ${border}`,
-        background: status === "running" ? "rgba(253,224,71,0.08)" : "#0f1623",
-        boxShadow: status === "running" ? `0 0 14px ${border}66` : "none",
-        minWidth: isControl ? 70 : 132,
+        background: status === "running" ? "rgba(253,224,71,0.08)" : "#12151c",
+        boxShadow: status === "running" ? `0 0 10px ${border}55` : "none",
+        minWidth: isControl ? 66 : 124,
       }}
     >
       {status === "running" && (
@@ -122,7 +122,7 @@ export default function GraphView({ topology, run }: Props) {
       <div
         className="w-full rounded-xl border border-dashed p-3 transition-all"
         style={{
-          borderColor: fanoutActive ? colorHex("yellow") : "#1e293b",
+          borderColor: fanoutActive ? colorHex("yellow") : "#1e2430",
           background: fanoutActive ? "rgba(253,224,71,0.04)" : "transparent",
         }}
       >

@@ -2,7 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-/* A dark, console-like base so the execution viewer reads like LangSmith. */
+/* Premium near-black base: the report reads like a market-intelligence SaaS,
+   not a debugger. The execution trace lives in a drawer, not on the canvas. */
 :root {
   color-scheme: dark;
 }
@@ -15,9 +16,16 @@ body,
 
 body {
   margin: 0;
-  background: #0b0f17;
+  background: #08090c; /* surface.0 */
   color: #e5e7eb;
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Numbers (scores, prices, durations) should align in tabular columns. */
+.tnum {
+  font-variant-numeric: tabular-nums;
 }
 
 /* Slim scrollbars keep the dense panels from feeling cluttered. */
@@ -28,4 +36,31 @@ body {
 *::-webkit-scrollbar-thumb {
   background: #1f2937;
   border-radius: 4px;
+}
+
+/* Live-status pulse, used by the execution timeline and drawer rail. Defined
+   explicitly so it never depends on a Tailwind utility being present. */
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+/* Verdict reveal: the hero fades+rises in once a run resolves. */
+@keyframes verdict-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-verdict-in {
+  animation: verdict-in 0.35s ease-out both;
 }
