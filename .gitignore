@@ -22,4 +22,8 @@ __pycache__/
 .env
 # runtime memory store (created at first run)
 *.sqlite
+*.sqlite-shm
+*.sqlite-wal
 launchlens_memory.sqlite
+launchlens_memory.sqlite-shm
+launchlens_memory.sqlite-wal
