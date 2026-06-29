@@ -28,6 +28,10 @@ cp .env.example .env
 # 3. Run the chat loop
 uv run launchlens
 # or: uv run python cli.py
+
+# 4. (Optional) Run with debug trace — step through each graph node
+uv run launchlens --debug
+# or: uv run python cli.py --debug
 ```
 
 ### Environment variables (`.env`)
@@ -40,9 +44,14 @@ uv run launchlens
 | `OXYLABS_PASS`      | Oxylabs password — supply data                   |
 | `OPENAI_API_KEY`    | Required when `LLM_PROVIDER=openai`              |
 | `ANTHROPIC_API_KEY` | Required when `LLM_PROVIDER=anthropic`          |
+| `LAUNCHLENS_DEBUG`  | Set to `1` to enable debug trace (alt: `--debug`) |
 
 > **Mock mode** (`LLM_PROVIDER=mock`) needs no keys: every tool loads from `fixtures/`
 > and a fake LLM drives the conversation. Use it to develop and demo offline.
+
+> **Debug mode** — Pass `--debug` (or set `LAUNCHLENS_DEBUG=1` in `.env`) to stream
+> each graph node and its state delta before the verdict. Press Enter to advance,
+> type `a` to auto-advance remaining steps. Useful for learning how LangGraph executes.
 
 ---
 
