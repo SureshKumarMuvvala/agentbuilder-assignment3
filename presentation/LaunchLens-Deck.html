@@ -1,0 +1,573 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>LaunchLens — Presentation Deck</title>
+<style>
+  /* ------------------------------------------------------------------ *
+   * LaunchLens deck — a single, self-contained file. No external deps. *
+   * Navigate: ↓/↑ or →/← arrows, PageUp/PageDown, or just scroll.      *
+   * Press F for fullscreen, P to toggle a print-friendly view.         *
+   * ------------------------------------------------------------------ */
+  :root{
+    --bg:#0a0d13; --bg2:#0f131b; --card:#141a24; --card2:#1a212d;
+    --hair:#222a38; --ink:#e6ecf5; --mut:#93a1b5; --dim:#64748b;
+    --go:#34d399; --blue:#60a5fa; --cyan:#22d3ee; --yellow:#fbbf24;
+    --magenta:#c084fc; --rose:#fb7185;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --sans:"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;
+    scroll-snap-type:y mandatory;overflow-x:hidden;
+  }
+  .deck{counter-reset:slide}
+  .slide{
+    counter-increment:slide;
+    min-height:100vh;width:100%;scroll-snap-align:start;
+    display:flex;flex-direction:column;justify-content:center;
+    padding:5vh 6vw;position:relative;
+    border-bottom:1px solid var(--hair);
+    background:
+      radial-gradient(1200px 600px at 85% -10%, rgba(96,165,250,.07), transparent 60%),
+      radial-gradient(1000px 500px at 0% 110%, rgba(52,211,153,.06), transparent 60%);
+  }
+  .slide::after{
+    content:counter(slide) " / 18";
+    position:absolute;right:2.2vw;bottom:2.2vh;
+    font:600 12px var(--mono);color:var(--dim);letter-spacing:.05em;
+  }
+  .kick{font:700 13px var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--blue);margin:0 0 14px}
+  h1{font-size:clamp(34px,6vw,76px);line-height:1.02;margin:0 0 18px;letter-spacing:-.02em;font-weight:800}
+  h2{font-size:clamp(26px,3.6vw,46px);line-height:1.05;margin:0 0 18px;letter-spacing:-.015em;font-weight:750}
+  h3{font-size:18px;margin:0 0 8px;font-weight:700}
+  p{font-size:clamp(15px,1.5vw,19px);line-height:1.6;color:var(--mut);margin:0 0 14px;max-width:62ch}
+  .lead{font-size:clamp(17px,1.9vw,23px);color:var(--ink)}
+  strong{color:var(--ink);font-weight:650}
+  .accent-go{color:var(--go)} .accent-blue{color:var(--blue)} .accent-cyan{color:var(--cyan)}
+  .accent-yellow{color:var(--yellow)} .accent-mag{color:var(--magenta)} .accent-rose{color:var(--rose)}
+  .grid{display:grid;gap:18px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g5{grid-template-columns:repeat(5,1fr)}
+  @media(max-width:900px){.g2,.g3,.g5{grid-template-columns:1fr}}
+  .card{background:linear-gradient(180deg,var(--card),var(--bg2));border:1px solid var(--hair);border-radius:16px;padding:20px 22px}
+  .card h3{display:flex;align-items:center;gap:9px}
+  .dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex:0 0 auto}
+  .muted{color:var(--mut);font-size:15px;line-height:1.55}
+  ul.clean{margin:8px 0 0;padding:0;list-style:none}
+  ul.clean li{position:relative;padding:6px 0 6px 24px;color:var(--mut);font-size:16px;line-height:1.5}
+  ul.clean li::before{content:"→";position:absolute;left:0;color:var(--go);font-weight:700}
+  .pill{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--hair);background:var(--card);border-radius:999px;padding:7px 14px;font:600 13px var(--sans);color:var(--mut);margin:4px 6px 4px 0}
+  code,.mono{font-family:var(--mono)}
+  .codeblock{background:#0b0f16;border:1px solid var(--hair);border-radius:12px;padding:16px 18px;font:13.5px/1.7 var(--mono);color:#cbd5e1;overflow:auto;white-space:pre}
+  .codeblock .k{color:var(--magenta)} .codeblock .s{color:var(--go)} .codeblock .c{color:var(--dim)} .codeblock .n{color:var(--cyan)}
+  figure{margin:0}
+  .shot{width:100%;border-radius:14px;border:1px solid var(--hair);box-shadow:0 24px 60px -28px rgba(0,0,0,.85);display:block}
+  figcaption{margin-top:12px;color:var(--dim);font:600 13px var(--mono);letter-spacing:.04em}
+  .split{display:grid;grid-template-columns:1.15fr .85fr;gap:36px;align-items:center}
+  .split.flip{grid-template-columns:.85fr 1.15fr}
+  @media(max-width:1000px){.split,.split.flip{grid-template-columns:1fr}}
+  .tag{font:700 11px var(--mono);letter-spacing:.12em;text-transform:uppercase;padding:4px 9px;border-radius:6px}
+  .tag.demand{color:var(--blue);background:rgba(96,165,250,.12);border:1px solid rgba(96,165,250,.3)}
+  .tag.supply{color:var(--cyan);background:rgba(34,211,238,.12);border:1px solid rgba(34,211,238,.3)}
+
+  /* --- the graph diagram, drawn in pure CSS --- */
+  .flow{display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:6px}
+  .node{border-radius:12px;padding:11px 16px;font:650 14px var(--sans);text-align:center;border:1.5px solid;background:var(--card);min-width:150px}
+  .node small{display:block;font:600 10px var(--mono);letter-spacing:.1em;text-transform:uppercase;opacity:.8;margin-top:3px}
+  .n-mem{border-color:var(--magenta);color:#e9d5ff}
+  .n-route{border-color:var(--yellow);color:#fde68a}
+  .n-research{border-color:var(--blue);color:#bfdbfe;min-width:128px;font-size:13px;padding:9px 12px}
+  .n-research.supply{border-color:var(--cyan);color:#a5f3fc}
+  .n-agent{border-color:var(--go);color:#bbf7d0}
+  .n-end,.n-start{border-color:var(--hair);color:var(--mut);min-width:90px}
+  .arrow{color:var(--dim);font-size:18px;line-height:1}
+  .fan{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;padding:14px;border:1px dashed var(--hair);border-radius:14px;position:relative}
+  .fan::before{content:"FAN-OUT · 1 superstep · true parallel via Send()";position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--bg);padding:0 10px;font:700 10px var(--mono);letter-spacing:.1em;color:var(--blue)}
+  .fuse{display:flex;align-items:center;gap:18px;flex-wrap:wrap;justify-content:center}
+  .fuse .box{flex:1;min-width:200px}
+  .plus{font-size:34px;color:var(--go);font-weight:800}
+
+  /* concept table */
+  table{width:100%;border-collapse:collapse;font-size:15px}
+  th,td{text-align:left;padding:11px 12px;border-bottom:1px solid var(--hair)}
+  th{font:700 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+  td .mono{color:var(--cyan);font-size:13px}
+  tr:hover td{background:rgba(255,255,255,.015)}
+
+  .title-mark{display:flex;align-items:center;gap:16px;margin-bottom:8px}
+  .logo{width:54px;height:54px;border-radius:14px;display:grid;place-items:center;font-size:30px;background:linear-gradient(135deg,#1e293b,#0b1220);border:1px solid var(--hair)}
+  .verdicts{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px}
+  .vbadge{border-radius:12px;padding:14px 22px;font:800 22px var(--sans);letter-spacing:.02em;border:1.5px solid}
+  .v-go{color:var(--go);border-color:rgba(52,211,153,.5);background:rgba(52,211,153,.08)}
+  .v-niche{color:var(--yellow);border-color:rgba(251,191,36,.5);background:rgba(251,191,36,.08)}
+  .v-nogo{color:var(--rose);border-color:rgba(251,113,133,.5);background:rgba(251,113,133,.08)}
+
+  .hint{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:50;
+    font:600 12px var(--mono);color:var(--dim);background:rgba(10,13,19,.8);
+    border:1px solid var(--hair);border-radius:999px;padding:7px 16px;backdrop-filter:blur(6px)}
+  .progress{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--go),var(--blue));z-index:60;width:0}
+
+  /* print */
+  @media print{
+    body{scroll-snap-type:none}
+    .slide{min-height:auto;page-break-after:always;border:none;padding:28px 30px}
+    .hint,.progress{display:none}
+    .shot{box-shadow:none}
+  }
+  body.print-mode{scroll-snap-type:none}
+  body.print-mode .slide{min-height:auto;border-bottom:1px solid var(--hair)}
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<div class="deck">
+
+  <!-- 1 · TITLE -------------------------------------------------------- -->
+  <section class="slide">
+    <div class="title-mark">
+      <div class="logo">🔭</div>
+      <span class="kick" style="margin:0">Market-Intelligence AI Agent</span>
+    </div>
+    <h1>Launch<span class="accent-blue">Lens</span></h1>
+    <p class="lead" style="max-width:40ch">A founder types a product idea. LaunchLens researches <strong>demand</strong> and <strong>supply</strong> live, fuses both, and answers one question — <strong class="accent-go">“Will it sell?”</strong></p>
+    <div class="verdicts">
+      <span class="vbadge v-go">GO</span>
+      <span class="vbadge v-niche">NICHE</span>
+      <span class="vbadge v-nogo">NO-GO</span>
+    </div>
+    <p style="margin-top:22px;color:var(--dim);font:600 13px var(--mono)">LangGraph · LangChain · FastAPI + SSE · React + TypeScript · SQLite checkpointer</p>
+  </section>
+
+  <!-- 2 · THE PROBLEM / PRODUCT ---------------------------------------- -->
+  <section class="slide">
+    <span class="kick">The Product</span>
+    <h2>Founders guess. LaunchLens checks.</h2>
+    <div class="split">
+      <div>
+        <p>Before building anything, a founder needs to know two things: <strong>is there demand</strong>, and <strong>who already supplies it?</strong> Today that means hours across Google Trends, news, and Amazon — done by hand, never fused.</p>
+        <p>LaunchLens collapses that into a single sentence in, a single verdict out:</p>
+        <ul class="clean">
+          <li><strong>Type an idea</strong> — “insulated steel water bottle in India under ₹1,500”</li>
+          <li><strong>It researches both sides</strong> — demand (SerpApi) + supply (Oxylabs)</li>
+          <li><strong>It fuses + decides</strong> — GO / NICHE / NO-GO with price band &amp; positioning</li>
+          <li><strong>It remembers</strong> — follow-ups keep context; long chats auto-summarize</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="dot" style="background:var(--go)"></span>Every verdict ships with receipts</h3>
+        <p class="muted">Demand score, supply/competition, a recommended price band, and the top unmet gap mined straight from competitor reviews — each traceable to the tool call that produced it.</p>
+        <div style="margin-top:10px">
+          <span class="pill">📈 Trend direction</span>
+          <span class="pill">💰 Price band</span>
+          <span class="pill">🛒 Seller count</span>
+          <span class="pill">⭐ Review gaps</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 · HOW IT WORKS (PIPELINE) -------------------------------------- -->
+  <section class="slide">
+    <span class="kick">How it works · one pass</span>
+    <h2>Idea → research → fuse → verdict</h2>
+    <p>A single LangGraph state machine runs the whole turn. Read left-to-right it is also the rubric — the five graded LangGraph concepts in execution order.</p>
+    <div class="grid g5" style="margin-top:8px">
+      <div class="card"><h3><span class="dot" style="background:var(--magenta)"></span>Memory</h3><p class="muted"><code>summarize_if_needed</code> compresses old turns before they overflow context.</p></div>
+      <div class="card"><h3><span class="dot" style="background:var(--yellow)"></span>Routing</h3><p class="muted"><code>classify_intent</code> labels the question, a conditional edge picks the path.</p></div>
+      <div class="card"><h3><span class="dot" style="background:var(--blue)"></span>Fan-out</h3><p class="muted"><code>Send()</code> launches the research nodes in one parallel superstep.</p></div>
+      <div class="card"><h3><span class="dot" style="background:var(--go)"></span>Agent + Tools</h3><p class="muted"><code>create_react_agent</code> fuses demand + supply into the verdict.</p></div>
+      <div class="card"><h3><span class="dot" style="background:var(--cyan)"></span>Typed State</h3><p class="muted"><code>LaunchLensState</code> with reducers merges concurrent writes safely.</p></div>
+    </div>
+    <p style="margin-top:18px;color:var(--dim)">A grader can identify all five — Graph, Routing, Fan-Out, Agent+Tools, Memory — in under 30 seconds, live in the UI.</p>
+  </section>
+
+  <!-- 4 · GRAPH ARCHITECTURE (DIAGRAM) -------------------------------- -->
+  <section class="slide">
+    <span class="kick">Graph Architecture</span>
+    <h2>One typed StateGraph, one superstep of parallelism</h2>
+    <div class="split flip">
+      <div class="flow">
+        <div class="node n-start">START</div>
+        <div class="arrow">↓</div>
+        <div class="node n-mem">summarize_if_needed <small>Memory</small></div>
+        <div class="arrow">↓</div>
+        <div class="node n-route">classify_intent <small>Routing</small></div>
+        <div class="arrow">↓ &nbsp;Send()</div>
+        <div class="fan" style="margin-top:6px">
+          <div class="node n-research">Google Trends</div>
+          <div class="node n-research">Google Shopping</div>
+          <div class="node n-research">Google News</div>
+          <div class="node n-research supply">Amazon Search</div>
+          <div class="node n-research supply">Amazon Reviews</div>
+        </div>
+        <div class="arrow">↓ &nbsp;merge → research dict</div>
+        <div class="node n-agent">agent <small>Agent + Tools → Verdict</small></div>
+        <div class="arrow">↓</div>
+        <div class="node n-end">END</div>
+      </div>
+      <div>
+        <p>The router doesn’t call the research nodes in sequence — it returns a <strong>list of <code>Send()</code> objects</strong>, so LangGraph launches every targeted node <strong>in the same superstep</strong> and waits for all of them before the agent runs.</p>
+        <p>Each branch writes <strong>a different key</strong> into one <code>research</code> dict; the <code>operator.or_</code> reducer merges them without clobbering. That merged dict is what the agent fuses.</p>
+        <p style="color:var(--dim)"><code>SqliteSaver</code> checkpoints state after every node — keyed by <code>thread_id</code>, so the next turn remembers.</p>
+        <div><span class="tag demand">SerpApi · demand</span> &nbsp; <span class="tag supply">Oxylabs · supply</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 · THE 5 CONCEPTS (TABLE) -------------------------------------- -->
+  <section class="slide">
+    <span class="kick">Concept Map · graded</span>
+    <h2>Five LangGraph concepts, each pinned to code</h2>
+    <table>
+      <thead><tr><th>#</th><th>Concept</th><th>Where it lives</th><th>Symbol</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td><strong>Typed StateGraph</strong> + reducers</td><td class="mono">graph.py</td><td><span class="mono">LaunchLensState · operator.or_</span></td></tr>
+        <tr><td>2</td><td><strong>Fan-out</strong> (parallel Send)</td><td class="mono">graph.py</td><td><span class="mono">route_by_intent → Send()</span></td></tr>
+        <tr><td>3</td><td><strong>Routing</strong> (conditional edges)</td><td class="mono">graph.py</td><td><span class="mono">classify_intent · add_conditional_edges</span></td></tr>
+        <tr><td>4</td><td><strong>Agent node</strong> + tools</td><td class="mono">graph.py</td><td><span class="mono">create_react_agent (6 tools)</span></td></tr>
+        <tr><td>5</td><td><strong>Short-term memory</strong></td><td class="mono">memory.py · graph.py</td><td><span class="mono">SqliteSaver · summarize_if_needed</span></td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top:18px">Intent → plan mapping keeps routing honest: <code>demand</code> fans to Trends + News, <code>pricing</code> to Shopping + Amazon, <code>reviews</code> to Amazon + Reviews, and <code class="accent-go">full</code> pulls all five for a complete Go/No-Go.</p>
+  </section>
+
+  <!-- 6 · DATA FUSION (CORE) ------------------------------------------ -->
+  <section class="slide">
+    <span class="kick">Data-Fusion Approach</span>
+    <h2>Demand × Supply → one verdict, not two reports</h2>
+    <div class="fuse" style="margin:6px 0 20px">
+      <div class="card box" style="border-color:rgba(96,165,250,.35)">
+        <h3><span class="dot" style="background:var(--blue)"></span>Demand <span class="tag demand" style="margin-left:auto">SerpApi</span></h3>
+        <ul class="clean">
+          <li>Google <strong>Trends</strong> — interest direction &amp; score</li>
+          <li>Google <strong>Shopping</strong> — cross-retailer price band</li>
+          <li>Google <strong>News</strong> — category momentum</li>
+        </ul>
+      </div>
+      <div class="plus">⊕</div>
+      <div class="card box" style="border-color:rgba(34,211,238,.35)">
+        <h3><span class="dot" style="background:var(--cyan)"></span>Supply <span class="tag supply" style="margin-left:auto">Oxylabs</span></h3>
+        <ul class="clean">
+          <li>Amazon <strong>Search</strong> — sellers, ratings, price band</li>
+          <li>Amazon <strong>Reviews</strong> — recurring complaints = gaps</li>
+        </ul>
+      </div>
+      <div class="plus">→</div>
+      <div class="card box" style="border-color:rgba(52,211,153,.4)">
+        <h3><span class="dot" style="background:var(--go)"></span>Fused verdict</h3>
+        <p class="muted">Rising demand + a price gap + an unmet review complaint = <strong class="accent-go">GO</strong>, with where to enter and what to win on.</p>
+      </div>
+    </div>
+    <p>The agent never sees two siloed payloads. It receives <strong>one merged <code>research</code> dict</strong> and is told to <em>fuse both sides</em> — demand justifies the “why now”, supply justifies the “where’s the gap”, and the price band comes from reconciling Shopping vs Amazon.</p>
+  </section>
+
+  <!-- 7 · SLIM TOOL OUTPUTS ------------------------------------------- -->
+  <section class="slide">
+    <span class="kick">Data-Fusion · discipline</span>
+    <h2>Slim signals, never raw payloads</h2>
+    <div class="split">
+      <div>
+        <p>Every tool returns a <strong>small structured dict (&lt; 200 bytes)</strong> — never the raw API response. This keeps the LLM context clean, the fusion cheap, and the trace readable.</p>
+        <ul class="clean">
+          <li><strong>Demand</strong> distills to a score + direction + related terms</li>
+          <li><strong>Supply</strong> distills to seller count, price band, top complaints</li>
+          <li><strong>Errors degrade gracefully</strong> — a failed live call returns <code>{"error": …}</code>, never crashes the graph</li>
+          <li><strong>Mock mode</strong> serves the same shapes from fixtures — deterministic, offline, free</li>
+        </ul>
+      </div>
+      <div>
+        <div class="codeblock"><span class="c"># google_trends → demand signal</span>
+{
+  <span class="s">"trend"</span>: <span class="s">"rising"</span>,
+  <span class="s">"avg_interest"</span>: <span class="n">59</span>,
+  <span class="s">"related"</span>: [<span class="s">"insulated steel water bottle"</span>,
+              <span class="s">"leakproof flask 1l"</span>]
+}
+
+<span class="c"># amazon_search → supply signal (Oxylabs)</span>
+{
+  <span class="s">"sellers"</span>: <span class="n">5</span>, <span class="s">"rating"</span>: <span class="n">4.1</span>,
+  <span class="s">"low"</span>: <span class="n">649</span>, <span class="s">"high"</span>: <span class="n">1999</span>,
+  <span class="s">"top_asin"</span>: <span class="s">"B0AAA11111"</span>
+}</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8 · UI INTRO ---------------------------------------------------- -->
+  <section class="slide">
+    <span class="kick">The Interface</span>
+    <h2>Verdict-first, with a LangSmith-style trace one click away</h2>
+    <div class="split flip">
+      <figure>
+        <img class="shot" src="screenshots/01-landing.png" alt="LaunchLens landing screen">
+        <figcaption>01 · Landing — “Will it sell?”</figcaption>
+      </figure>
+      <div>
+        <p>The UI is a second front-end over the <strong>same compiled graph</strong> as the CLI — it changes nothing about the five concepts, it just makes them <strong>observable</strong>.</p>
+        <ul class="clean">
+          <li><strong>Left</strong> — saved analyses + a live memory footnote (messages in SQLite, summarize threshold)</li>
+          <li><strong>Centre</strong> — the report: type an idea, get a verdict</li>
+          <li><strong>Right</strong> — a collapsed “concept rail” that expands into the full execution trace</li>
+          <li><strong>Top</strong> — provider pill: <code>mock</code> (amber) vs live <code>openai/anthropic</code></li>
+        </ul>
+        <p style="color:var(--dim)">Shown here in mock mode — no API keys, deterministic fixtures.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9 · UI · VERDICT ------------------------------------------------ -->
+  <section class="slide">
+    <span class="kick">Feature · The Report</span>
+    <h2>The verdict is the hero</h2>
+    <div class="split">
+      <figure>
+        <img class="shot" src="screenshots/02-verdict.png" alt="Verdict report with scores and insight columns">
+        <figcaption>02 · Verdict — GO, with demand/supply receipts</figcaption>
+      </figure>
+      <div>
+        <p>A routed <span class="tag" style="color:var(--go);background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.3)">FULL_REPORT</span> turn renders the full card:</p>
+        <ul class="clean">
+          <li><strong>GO / NICHE / NO-GO</strong> badge + four scores — demand, supply, competition, confidence</li>
+          <li><strong>Recommendations</strong> — timing, headroom, and the top unmet gap to win on</li>
+          <li><strong>Concept receipts</strong> — Route · Fan-out 5× · Agent 5 tools · Memory checkpoints, inline</li>
+          <li><strong>Demand vs Supply columns</strong> — SerpApi signals beside Oxylabs signals: the fusion, made visible</li>
+        </ul>
+        <p style="color:var(--dim)">Other intents render focused cards instead (Demand / Pricing / Review analysis) — the router decides which.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 · UI · GRAPH ------------------------------------------------- -->
+  <section class="slide">
+    <span class="kick">Feature · Execution Graph</span>
+    <h2>Watch the fan-out light up</h2>
+    <div class="split flip">
+      <figure>
+        <img class="shot" src="screenshots/03-graph.png" alt="Execution graph showing parallel fan-out">
+        <figcaption>03 · Graph — START → memory → router → 5 parallel branches → agent</figcaption>
+      </figure>
+      <div>
+        <p>The expanded drawer’s <strong>Graph</strong> tab is a replayable topology of the actual run:</p>
+        <ul class="clean">
+          <li>The <strong>five research nodes sit in one boxed superstep</strong> — labelled “parallel branches (run in one superstep)”</li>
+          <li>Each node shows its <strong>step number, concept, and duration</strong></li>
+          <li><code>Send() fan-out</code> in, <code>merge → research dict</code> out — the routing + fan-out + merge story in one picture</li>
+          <li>A <strong>5-concept legend</strong> marks each as <span class="accent-go">✓ observed</span> for this turn</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11 · UI · TIMELINE ---------------------------------------------- -->
+  <section class="slide">
+    <span class="kick">Feature · Timeline</span>
+    <h2>Proof the fan-out is real, not sequential</h2>
+    <div class="split">
+      <figure>
+        <img class="shot" src="screenshots/04-timeline.png" alt="Node timeline with shared step 3">
+        <figcaption>04 · Timeline — five nodes all at step 3</figcaption>
+      </figure>
+      <div>
+        <p>The <strong>Timeline</strong> tab lists every node execution with its superstep and duration. The tell-tale of true parallelism:</p>
+        <ul class="clean">
+          <li>Memory Check = <strong>step 1</strong>, Intent Router = <strong>step 2</strong></li>
+          <li>All five research nodes share <strong>step 3</strong> — they ran together, not one after another</li>
+          <li>Verdict Agent = <strong>step 4</strong>, after the merge</li>
+          <li>Per-node <strong>durations</strong> make the cost of each call legible</li>
+        </ul>
+        <p style="color:var(--dim)">Shared step number = same superstep = genuine <code>Send()</code> fan-out.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 12 · UI · TOOLS ------------------------------------------------- -->
+  <section class="slide">
+    <span class="kick">Feature · Tool Trace</span>
+    <h2>Every tool call and its slim result</h2>
+    <div class="split flip">
+      <figure>
+        <img class="shot" src="screenshots/05-tools.png" alt="Tool trace with slim JSON outputs">
+        <figcaption>05 · Tools — input keyword + &lt;200 B JSON output</figcaption>
+      </figure>
+      <div>
+        <p>The <strong>Tools</strong> tab shows each research call as it fired:</p>
+        <ul class="clean">
+          <li>Tool name + a colour-coded source tag — <span class="tag demand">demand · SerpApi</span> <span class="tag supply">supply · Oxylabs</span></li>
+          <li>The <strong>exact input keyword</strong> — extracted from the question (“stainless-steel insulated water bottle india”)</li>
+          <li>The <strong>slim structured output</strong> the LLM actually consumed — trend, price band, headlines, complaints</li>
+          <li>Status per call, so a degraded live call is visible at a glance</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 13 · UI · STATE ------------------------------------------------- -->
+  <section class="slide">
+    <span class="kick">Feature · State</span>
+    <h2>The typed state, merged live</h2>
+    <div class="split">
+      <figure>
+        <img class="shot" src="screenshots/06-state.png" alt="State viewer showing intent, keyword, merged research">
+        <figcaption>06 · State — intent, keyword, and the merged research dict</figcaption>
+      </figure>
+      <div>
+        <p>The <strong>State</strong> tab exposes <code>LaunchLensState</code> as it stood at the end of the turn:</p>
+        <ul class="clean">
+          <li><strong>intent (routing)</strong> — <code>full → 5 branches</code></li>
+          <li><strong>search keyword</strong> — the cleaned product term sent to every tool</li>
+          <li><strong>research</strong> — the one dict <em>merged via <code>operator.or_</code></em>, with every branch’s key (trends, shopping, news, amazon, reviews)</li>
+        </ul>
+        <p>This is the reducer doing its job: five concurrent writes, zero clobbering.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 14 · UI · MEMORY ------------------------------------------------ -->
+  <section class="slide">
+    <span class="kick">Feature · Memory</span>
+    <h2>Memory you can see grow</h2>
+    <div class="split flip">
+      <figure>
+        <img class="shot" src="screenshots/07-memory.png" alt="Memory evolution across turns">
+        <figcaption>07 · Memory — Turn 1 → Turn 2, persisted in SQLite</figcaption>
+      </figure>
+      <div>
+        <p>The <strong>Memory</strong> tab shows evolution <strong>across all turns</strong>, not just the latest:</p>
+        <ul class="clean">
+          <li>Each turn’s <strong>message count + checkpoints</strong> written by <code>SqliteSaver</code></li>
+          <li>Turn 2 (“What about the US market instead?”) <strong>keeps the bottle context</strong> — the follow-up works without restating it</li>
+          <li>The bar grows toward the <strong>summarize threshold (10)</strong>; past it, <code>summarize_if_needed</code> compresses older turns</li>
+          <li>Each turn keeps its own trace — older runs are never overwritten</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 15 · OBSERVABILITY SUMMARY -------------------------------------- -->
+  <section class="slide">
+    <span class="kick">Why this UI</span>
+    <h2>An execution viewer, not a generic chatbot</h2>
+    <p>Observable systems score better than hidden ones — so every concept has a panel that proves it ran, for any turn you select.</p>
+    <div class="grid g3" style="margin-top:8px">
+      <div class="card"><h3><span class="dot" style="background:var(--yellow)"></span>Routing</h3><p class="muted">Intent badge on the card + the router decision in Timeline/State.</p></div>
+      <div class="card"><h3><span class="dot" style="background:var(--blue)"></span>Fan-out</h3><p class="muted">Boxed superstep in Graph; shared step 3 in Timeline.</p></div>
+      <div class="card"><h3><span class="dot" style="background:var(--go)"></span>Agent + Tools</h3><p class="muted">Each call + slim result in the Tool Trace.</p></div>
+      <div class="card"><h3><span class="dot" style="background:var(--cyan)"></span>Typed State</h3><p class="muted">Live <code>operator.or_</code> merge in the State viewer.</p></div>
+      <div class="card"><h3><span class="dot" style="background:var(--magenta)"></span>Memory</h3><p class="muted">Per-turn checkpoints + growth toward the summary trigger.</p></div>
+      <div class="card"><h3><span class="dot" style="background:var(--rose)"></span>Per-turn history</h3><p class="muted">Re-open any earlier turn’s full report and trace, independently.</p></div>
+    </div>
+  </section>
+
+  <!-- 16 · TECH STACK ------------------------------------------------- -->
+  <section class="slide">
+    <span class="kick">Under the Hood</span>
+    <h2>Stack &amp; design rules</h2>
+    <div class="split">
+      <div>
+        <h3 style="margin-bottom:12px">Backend</h3>
+        <span class="pill">🐍 Python · uv</span><span class="pill">🕸️ LangGraph</span><span class="pill">🔗 LangChain</span>
+        <span class="pill">⚡ FastAPI + SSE</span><span class="pill">💾 SQLite checkpointer</span>
+        <h3 style="margin:18px 0 12px">Frontend</h3>
+        <span class="pill">⚛️ React + TypeScript</span><span class="pill">🎨 Tailwind</span><span class="pill">🧩 Vite</span>
+        <h3 style="margin:18px 0 12px">Data</h3>
+        <span class="pill tag demand" style="border-radius:999px">SerpApi — Trends · Shopping · News</span>
+        <span class="pill tag supply" style="border-radius:999px">Oxylabs — Amazon search · reviews</span>
+      </div>
+      <div class="card">
+        <h3>Design rules that shaped it</h3>
+        <ul class="clean">
+          <li><strong>Slim tool output</strong> — &lt; 200 B dicts, never raw payloads</li>
+          <li><strong>Three LLM modes</strong> — <code>mock</code> / <code>openai</code> / <code>anthropic</code>, one env var, switchable at runtime</li>
+          <li><strong>Mock-first</strong> — fixtures make the whole demo offline &amp; deterministic</li>
+          <li><strong>Graceful errors</strong> — try/except per live call, never crash the graph</li>
+          <li><strong>Beginner comments</strong> — every node/tool explains purpose, in/out, why</li>
+          <li><strong>Same graph, two front-ends</strong> — CLI &amp; web share one compiled graph</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 17 · RUN IT ----------------------------------------------------- -->
+  <section class="slide">
+    <span class="kick">Run It</span>
+    <h2>Two processes, no keys needed</h2>
+    <div class="split">
+      <div>
+        <div class="codeblock"><span class="c"># 1 · Backend — FastAPI + SSE</span>
+<span class="k">uv</span> sync
+<span class="k">uv</span> run launchlens-api        <span class="c"># :8000</span>
+
+<span class="c"># 2 · Frontend — Vite dev server</span>
+<span class="k">cd</span> frontend && npm install
+npm run dev                  <span class="c"># :5173</span>
+
+<span class="c"># …or the CLI over the same graph</span>
+<span class="k">uv</span> run launchlens --debug</div>
+        <p style="margin-top:14px;color:var(--dim)">Open <code>http://localhost:5173</code>. Mock mode (default) needs no API keys.</p>
+      </div>
+      <div class="card">
+        <h3><span class="dot" style="background:var(--go)"></span>A 60-second demo path</h3>
+        <ul class="clean">
+          <li>Ask: “stainless-steel insulated water bottle in India under ₹1,500”</li>
+          <li>Read the <strong>GO</strong> verdict + demand/supply columns</li>
+          <li>Open the drawer → <strong>Graph</strong>: see 5 parallel branches</li>
+          <li>→ <strong>Timeline</strong>: confirm they share step 3</li>
+          <li>Ask “What about the US market?” → <strong>Memory</strong> tab shows it remembered</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 18 · CLOSE ------------------------------------------------------ -->
+  <section class="slide">
+    <div class="title-mark"><div class="logo">🔭</div><span class="kick" style="margin:0">Thank you</span></div>
+    <h1>Type an idea.<br><span class="accent-go">Get the verdict.</span></h1>
+    <p class="lead" style="max-width:46ch">LaunchLens turns a one-line product idea into a fused, evidence-backed Go/No-Go — and shows its work, node by node.</p>
+    <div class="verdicts">
+      <span class="vbadge v-go">GO</span>
+      <span class="vbadge v-niche">NICHE</span>
+      <span class="vbadge v-nogo">NO-GO</span>
+    </div>
+    <p style="margin-top:20px;color:var(--dim);font:600 13px var(--mono)">5 LangGraph concepts · SerpApi × Oxylabs fusion · fully observable</p>
+  </section>
+
+</div>
+
+<div class="hint" id="hint">↑ ↓ to navigate · F fullscreen · P print view</div>
+<script>
+  // Progress bar reflects scroll position through the deck.
+  const prog = document.getElementById('progress');
+  const onScroll = () => {
+    const h = document.documentElement;
+    const max = h.scrollHeight - h.clientHeight;
+    prog.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + '%';
+  };
+  document.addEventListener('scroll', onScroll, {passive:true}); onScroll();
+
+  // Keyboard navigation: arrows / PageUp-Down jump slide-to-slide.
+  const slides = [...document.querySelectorAll('.slide')];
+  const current = () => {
+    const mid = window.scrollY + window.innerHeight/2;
+    return slides.findIndex(s => s.offsetTop <= mid && s.offsetTop + s.offsetHeight > mid);
+  };
+  const go = i => slides[Math.max(0, Math.min(slides.length-1, i))]?.scrollIntoView({behavior:'smooth'});
+  addEventListener('keydown', e => {
+    if (['ArrowDown','ArrowRight','PageDown',' '].includes(e.key)) { e.preventDefault(); go(current()+1); }
+    else if (['ArrowUp','ArrowLeft','PageUp'].includes(e.key)) { e.preventDefault(); go(current()-1); }
+    else if (e.key==='Home') go(0);
+    else if (e.key==='End') go(slides.length-1);
+    else if (e.key.toLowerCase()==='f') document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+    else if (e.key.toLowerCase()==='p') document.body.classList.toggle('print-mode');
+  });
+  // Fade the hint out after a few seconds.
+  setTimeout(()=>{ const h=document.getElementById('hint'); h.style.transition='opacity .6s'; h.style.opacity='0'; }, 4200);
+</script>
+</body>
+</html>
